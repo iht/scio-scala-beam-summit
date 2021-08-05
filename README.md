@@ -3,6 +3,7 @@
 This is the example used in the Scio/Scala workshop in the Beam Summit 2021
 
 * https://2021.beamsummit.org/sessions/scala-streaming-pipeline-using-scio/
+* [Slides in PDF](./docs/beam_summit_2021_scio_workshop.pdf)
 
 Branches in this repo:
 
