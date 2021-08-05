@@ -30,7 +30,7 @@ In the Dataflow UI, you should a graph of the pipeline like this one:
 
 ![Graph of the pipline](./imgs/pipeline.png)
 
-The script assumes that you want to launch the pipeline in `europe-west1` and that you have the following resources in
+The script assumes that you want to launch the pipeline in `us-east1` and that you have the following resources in
 your project already created
 
 * A BigQuery dataset called `taxi_rides`
