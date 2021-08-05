@@ -67,7 +67,7 @@ object DataTypes {
                           ) {
     def toTaxiRide: TaxiRide =
       TaxiRide(this.ride_id,
-        0,
+        1,
         this.timestamp,
         None,
         this.meter_increment,
