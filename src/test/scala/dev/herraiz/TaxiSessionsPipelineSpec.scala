@@ -26,6 +26,8 @@ import org.apache.beam.sdk.testing.TestStream
 class TaxiSessionsPipelineSpec extends PipelineSpec {
   "The TaxiSessionsPipelineSpec" should "run the pipeline correctly" in {
 
+
+
     val stream: TestStream[String] = testStreamOf[String]
       .advanceWatermarkTo(baseTime)
       .addElements(badJson)

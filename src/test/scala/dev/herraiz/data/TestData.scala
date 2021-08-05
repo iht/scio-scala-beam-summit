@@ -24,7 +24,7 @@ object TestData {
 
   val PIPELINE_START: Int = 10
 
-  val jsonStr1 =
+  val jsonStr1: String =
     """
       |{
       |  "ride_id": "0878437d-8dae-4ebc-b4cf-3a3da40396ad",
@@ -41,7 +41,7 @@ object TestData {
 
   val obj1: Either[circe.Error, PointTaxiRide] = json2TaxiRide(jsonStr1)
 
-  val jsonStr2 =
+  val jsonStr2: String =
     """
       |{
       |  "ride_id": "0878437d-8dae-4ebc-b4cf-3a3da40396ad",
@@ -58,12 +58,14 @@ object TestData {
 
   val obj2: Either[circe.Error, PointTaxiRide] = json2TaxiRide(jsonStr2)
 
-  val badJson =
+  val badJson: String =
     """"{
       | "hello": "world"
       | }
       |""".stripMargin
 
-  val baseTime: Instant = obj1.right.get
-    .timestamp.minus(Duration.standardSeconds(PIPELINE_START))
+  val baseTime: Instant = obj1
+    .map(_.timestamp.minus(Duration.standardSeconds(PIPELINE_START)))
+    .getOrElse(Instant.now())
+
 }
