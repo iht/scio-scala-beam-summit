@@ -18,9 +18,11 @@ package dev.herraiz
 
 import com.spotify.scio.bigquery._
 import com.spotify.scio.bigquery.{CREATE_IF_NEEDED, Table, WRITE_TRUNCATE}
+import com.spotify.scio.pubsub.PubsubIO
 import com.spotify.scio.values.{SCollection, WindowOptions}
 import com.spotify.scio.{Args, ContextAndArgs, ScioContext, streaming}
 import dev.herraiz.data.DataTypes._
+import io.circe
 import org.apache.beam.sdk.transforms.windowing.{AfterProcessingTime, AfterWatermark}
 import org.joda.time.Duration
 
@@ -31,7 +33,7 @@ object TaxiSessionsPipeline {
 
   def main(cmdlineArgs: Array[String]): Unit = {
     val (scontext: ScioContext, opts: Args) = ContextAndArgs(cmdlineArgs)
-    implicit val sc = scontext
+    implicit val sc: ScioContext = scontext
 
     val pubsubTopic: String = opts("pubsub-topic")
     val goodTable = opts("output-table")
@@ -41,14 +43,14 @@ object TaxiSessionsPipeline {
     val messages: SCollection[String] = getMessagesFromPubSub(pubsubTopic)
     val (rides, writableErrors) = parseJSONStrings(messages)
 
-    rides.saveAsBigQueryTable(Table.Spec(goodTable), WRITE_TRUNCATE, CREATE_IF_NEEDED)
-    writableErrors.saveAsBigQueryTable(Table.Spec(badTable), WRITE_TRUNCATE, CREATE_IF_NEEDED)
+    rides.saveAsBigQueryTable(Table.Spec(goodTable), WRITE_APPEND, CREATE_IF_NEEDED)
+    writableErrors.saveAsBigQueryTable(Table.Spec(badTable), WRITE_APPEND, CREATE_IF_NEEDED)
 
     // Group by session with a max duration of 5 mins between events
     // Window options
     val wopts: WindowOptions = customWindowOptions
-    val groupRides = groupRidesByKey(rides.map(_.toTaxiRide), wopts)
-    groupRides.saveAsBigQueryTable(Table.Spec(accumTable), WRITE_TRUNCATE, CREATE_IF_NEEDED)
+    val groupRides: SCollection[TaxiRide] = groupRidesByKey(rides.map(_.toTaxiRide), wopts)
+    groupRides.saveAsBigQueryTable(Table.Spec(accumTable), WRITE_APPEND, CREATE_IF_NEEDED)
 
     sc.run
   }
@@ -67,15 +69,41 @@ object TaxiSessionsPipeline {
     )
 
   def getMessagesFromPubSub(pubsubTopic: String)(implicit sc: ScioContext): SCollection[String] = {
-    ???
+    val msgs: PubsubIO[String] = PubsubIO.string(pubsubTopic, timestampAttribute = "ts")
+    val param: PubsubIO.ReadParam = PubsubIO.ReadParam(PubsubIO.Topic)
+
+    /*_*/
+    val output: SCollection[String] = sc.read(msgs)(param) /*_*/
+
+    output
   }
 
   def parseJSONStrings(messages: SCollection[String]):
   (SCollection[PointTaxiRide], SCollection[JsonError]) = {
-    ???
+    val parsed: SCollection[Either[circe.Error, PointTaxiRide]] = messages.map(json2TaxiRide)
+
+    val lefts :: rights :: Nil : Seq[SCollection[Either[circe.Error, PointTaxiRide]]] = parsed.partition(2, { e =>
+      e match {
+        case Left(_) => 0
+        case Right(_1) => 1
+      }
+    })
+
+    val errors: SCollection[JsonError] = lefts.map(e => circeErrorToCustomError(e.left.get))
+    val rides: SCollection[PointTaxiRide] = rights.map(_.right.get)
+
+
+    (rides, errors)
   }
 
   def groupRidesByKey(rides: SCollection[TaxiRide], wopts: WindowOptions): SCollection[TaxiRide] = {
-    ???
+    val withKeys: SCollection[(String, TaxiRide)] = rides.keyBy(_.ride_id)
+
+    val windowed: SCollection[(String, TaxiRide)] =
+      withKeys.withSessionWindows(Duration.standardSeconds(SESSION_GAP), wopts)
+
+    val reduced: SCollection[TaxiRide] = windowed.reduceByKey(_ + _).map(_._2)
+
+    reduced
   }
 }

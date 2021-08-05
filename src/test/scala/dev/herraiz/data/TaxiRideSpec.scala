@@ -41,9 +41,9 @@ class TaxiRideSpec extends AnyWordSpec with Matchers {
 
   "Two TaxiRides" should {
     "be aggregated correcly" in {
-      val tr1 = ptr.toTaxiRide
-      val tr2 = ptr.toTaxiRide
-      val tr = tr1 + tr2
+      val tr1: TaxiRide = ptr.toTaxiRide
+      val tr2: TaxiRide = ptr.toTaxiRide
+      val tr: TaxiRide = tr1 + tr2
       tr shouldBe a[TaxiRide]
       tr.ride_id shouldBe tr1.ride_id
       tr.ride_id shouldBe tr2.ride_id
