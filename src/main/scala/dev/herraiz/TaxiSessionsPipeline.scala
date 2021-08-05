@@ -17,10 +17,11 @@
 package dev.herraiz
 
 import com.spotify.scio.bigquery._
-import com.spotify.scio.bigquery.{CREATE_IF_NEEDED, Table, WRITE_TRUNCATE}
+import com.spotify.scio.pubsub._
 import com.spotify.scio.values.{SCollection, WindowOptions}
 import com.spotify.scio.{Args, ContextAndArgs, ScioContext, streaming}
 import dev.herraiz.data.DataTypes._
+import io.circe
 import org.apache.beam.sdk.transforms.windowing.{AfterProcessingTime, AfterWatermark}
 import org.joda.time.Duration
 
@@ -31,7 +32,7 @@ object TaxiSessionsPipeline {
 
   def main(cmdlineArgs: Array[String]): Unit = {
     val (scontext: ScioContext, opts: Args) = ContextAndArgs(cmdlineArgs)
-    implicit val sc = scontext
+    implicit val sc: ScioContext = scontext
 
     val pubsubTopic: String = opts("pubsub-topic")
     val goodTable = opts("output-table")
@@ -39,7 +40,7 @@ object TaxiSessionsPipeline {
     val accumTable = opts("accum-table")
 
     val messages: SCollection[String] = getMessagesFromPubSub(pubsubTopic)
-    val (rides, writableErrors) = parseJSONStrings(messages)
+    val (rides: SCollection[PointTaxiRide], writableErrors: SCollection[JsonError]) = parseJSONStrings(messages)
 
     rides.saveAsBigQueryTable(Table.Spec(goodTable), WRITE_TRUNCATE, CREATE_IF_NEEDED)
     writableErrors.saveAsBigQueryTable(Table.Spec(badTable), WRITE_TRUNCATE, CREATE_IF_NEEDED)
@@ -67,15 +68,42 @@ object TaxiSessionsPipeline {
     )
 
   def getMessagesFromPubSub(pubsubTopic: String)(implicit sc: ScioContext): SCollection[String] = {
-    ???
+    val pubsubRead: PubsubIO[String] = PubsubIO.string(pubsubTopic, timestampAttribute = "ts")
+    val pubsubParams: PubsubIO.ReadParam = PubsubIO.ReadParam(PubsubIO.Topic)
+
+    /*_*/
+    sc.read(pubsubRead)(pubsubParams) /*_*/
   }
 
   def parseJSONStrings(messages: SCollection[String]):
   (SCollection[PointTaxiRide], SCollection[JsonError]) = {
-    ???
+    val jsons: SCollection[Either[circe.Error, PointTaxiRide]] = messages.map { s: String => json2TaxiRide(s) }
+
+    val errorsEither :: pointsEither :: Nil = jsons.partition(2, { e =>
+      e match {
+        case Left(_) => 0
+        case Right(_) => 1
+      }
+    })
+
+    val errors: SCollection[circe.Error] = errorsEither.map(_.left.get)
+    val points: SCollection[PointTaxiRide] = pointsEither.map(_.right.get)
+
+    val jsonErrors: SCollection[JsonError] = errors.map(circeErrorToCustomError)
+
+    (points, jsonErrors)
   }
 
   def groupRidesByKey(rides: SCollection[TaxiRide], wopts: WindowOptions): SCollection[TaxiRide] = {
-    ???
+    val ridesWithKey: SCollection[(String, TaxiRide)] =
+      rides.keyBy(_.ride_id)
+
+    val afterWindow: SCollection[(String, TaxiRide)] =
+      ridesWithKey.withSessionWindows(Duration.standardSeconds(SESSION_GAP), options = wopts)
+
+
+    val agg: SCollection[TaxiRide] = afterWindow.reduceByKey(_ + _).map(_._2)
+
+    agg
   }
 }

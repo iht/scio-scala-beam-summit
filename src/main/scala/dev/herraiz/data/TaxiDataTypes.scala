@@ -88,8 +88,6 @@ object DataTypes {
                      ) {
     def +(taxiRide: TaxiRide): TaxiRide = {
 
-      // Something is missing here
-
       val (first, second) =
         if (this.init.isAfter(taxiRide.init)) {
           (taxiRide, this)
@@ -116,7 +114,7 @@ object DataTypes {
 
       TaxiRide(
         taxiRide.ride_id,
-        0,
+        first.n_points + second.n_points,
         first.init,
         finishInstant,
         first.total_meter + second.total_meter,
