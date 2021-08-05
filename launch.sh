@@ -21,15 +21,8 @@ REGION=us-east1
 TMP_BUCKET=gs://${PROJECT_ID}
 DATASET_NAME=taxi_rides
 
-PUBLIC_IPS=false
+PUBLIC_IPS=false  # Enable Google Private Access in the regional subnetwork, or change this to true
 STREAMING_ENGINE=true
-
-# Sanitize JAR names
-#ls target/universal/lib/*\[* | while read l
-#          do
-#            mv $l `echo $l | sed 's/\[/_/g' | sed 's/\]/_/g'`
-#
-#          done
 
 bq rm -f ${DATASET_NAME}.point_rides
 bq rm -f ${DATASET_NAME}.total_rides
