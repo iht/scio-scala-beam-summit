@@ -20,7 +20,7 @@ You need to have a project in Google Cloud Platform in order to run this pipelin
 
 Run `sbt pack` to generate a package for the pipeline, and the use the launch script with your project name
 
-`$ ./scripts/launch.sh $MY_PROJECT_NAME`
+`$ ./launch.sh $MY_PROJECT_NAME`
 
 You should have installed `gcloud` authenticated with the necessary credentials, or those credentials should be
 available in the environment variable `GOOGLE_APPLICATION_CREDENTIALS`. For more details
