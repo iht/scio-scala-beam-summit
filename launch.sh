@@ -17,7 +17,7 @@
 #
 
 PROJECT_ID=$1
-REGION=europe-west1
+REGION=us-east1
 TMP_BUCKET=gs://${PROJECT_ID}
 DATASET_NAME=taxi_rides
 
