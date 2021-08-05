@@ -42,14 +42,14 @@ object TaxiSessionsPipeline {
     val messages: SCollection[String] = getMessagesFromPubSub(pubsubTopic)
     val (rides: SCollection[PointTaxiRide], writableErrors: SCollection[JsonError]) = parseJSONStrings(messages)
 
-    rides.saveAsBigQueryTable(Table.Spec(goodTable), WRITE_TRUNCATE, CREATE_IF_NEEDED)
-    writableErrors.saveAsBigQueryTable(Table.Spec(badTable), WRITE_TRUNCATE, CREATE_IF_NEEDED)
+    rides.saveAsBigQueryTable(Table.Spec(goodTable), WRITE_APPEND, CREATE_IF_NEEDED)
+    writableErrors.saveAsBigQueryTable(Table.Spec(badTable), WRITE_APPEND, CREATE_IF_NEEDED)
 
     // Group by session with a max duration of 5 mins between events
     // Window options
     val wopts: WindowOptions = customWindowOptions
     val groupRides = groupRidesByKey(rides.map(_.toTaxiRide), wopts)
-    groupRides.saveAsBigQueryTable(Table.Spec(accumTable), WRITE_TRUNCATE, CREATE_IF_NEEDED)
+    groupRides.saveAsBigQueryTable(Table.Spec(accumTable), WRITE_APPEND, CREATE_IF_NEEDED)
 
     sc.run
   }
