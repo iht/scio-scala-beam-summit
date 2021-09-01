@@ -19,7 +19,7 @@ You need to have a project in Google Cloud Platform in order to run this pipelin
 
 ## How to launch the pipeline
 
-Run `sbt pack` to generate a package for the pipeline, and the use the launch script with your project name
+Run `sbt stage` to generate a package for the pipeline, and the use the launch script with your project name
 
 `$ ./launch.sh $MY_PROJECT_NAME`
 
