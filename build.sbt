@@ -1,6 +1,6 @@
 import sbt._
 import Keys._
-val scioVersion = "0.10.4"
+val scioVersion = "0.14.10"
 val beamVersion = "2.30.0"
 lazy val commonSettings = Def.settings(
   organization := "dev.herraiz",
