@@ -16,10 +16,10 @@
 
 package dev.herraiz.data
 
-import com.spotify.scio.bigquery.types.BigQueryType
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.parser.decode
+import com.spotify.scio.bigquery.types.BigQueryType
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import org.joda.time.{Instant, Interval}
 
@@ -46,27 +46,29 @@ object DataTypes {
 
       ti match {
         case Success(instant: Instant) => Right(instant)
-        case Failure(e: Throwable) => Left(e.getMessage)
+        case Failure(e: Throwable)     => Left(e.getMessage)
       }
     }
 
   // Decoder to produce TaxiRide objects from Json
-  protected lazy implicit val taxiRideDecoder: Decoder[PointTaxiRide] = deriveDecoder[PointTaxiRide]
+  protected lazy implicit val taxiRideDecoder: Decoder[PointTaxiRide] =
+    deriveDecoder[PointTaxiRide]
 
   @BigQueryType.toTable
   case class PointTaxiRide(
-                            ride_id: String,
-                            point_idx: Int,
-                            latitude: Double,
-                            longitude: Double,
-                            timestamp: Instant,
-                            meter_reading: Double,
-                            meter_increment: Double,
-                            ride_status: String,
-                            passenger_count: Int
-                          ) {
+      ride_id: String,
+      point_idx: Int,
+      latitude: Double,
+      longitude: Double,
+      timestamp: Instant,
+      meter_reading: Double,
+      meter_increment: Double,
+      ride_status: String,
+      passenger_count: Int
+  ) {
     def toTaxiRide: TaxiRide =
-      TaxiRide(this.ride_id,
+      TaxiRide(
+        this.ride_id,
         1,
         this.timestamp,
         None,
@@ -78,14 +80,14 @@ object DataTypes {
 
   @BigQueryType.toTable
   case class TaxiRide(
-                       ride_id: String,
-                       n_points: Int,
-                       init: Instant,
-                       finish: Option[Instant],
-                       total_meter: Double,
-                       init_status: String,
-                       finish_status: Option[String]
-                     ) {
+      ride_id: String,
+      n_points: Int,
+      init: Instant,
+      finish: Option[Instant],
+      total_meter: Double,
+      init_status: String,
+      finish_status: Option[String]
+  ) {
     def +(taxiRide: TaxiRide): TaxiRide = {
 
       val (first, second) =
@@ -95,22 +97,28 @@ object DataTypes {
           (this, taxiRide)
         }
 
-
-      val (finishStatus: Option[String], finishInstant: Option[Instant]) = first.finish match {
-        case None =>
-          (Some(second.finish_status.getOrElse(second.init_status)),
-            Some(second.finish.getOrElse(second.init)))
-        case Some(i) =>
-          val interval: Interval = new Interval(first.init, i)
-          val testInstant: Instant = second.finish.getOrElse(second.init)
-          if (interval.contains(testInstant)) {
-            (Some(first.finish_status.getOrElse(first.init_status)),
-              Some(first.finish.getOrElse(first.init)))
-          } else {
-            (Some(second.finish_status.getOrElse(second.init_status)),
-              Some(second.finish.getOrElse(second.init)))
-          }
-      }
+      val (finishStatus: Option[String], finishInstant: Option[Instant]) =
+        first.finish match {
+          case None =>
+            (
+              Some(second.finish_status.getOrElse(second.init_status)),
+              Some(second.finish.getOrElse(second.init))
+            )
+          case Some(i) =>
+            val interval: Interval = new Interval(first.init, i)
+            val testInstant: Instant = second.finish.getOrElse(second.init)
+            if (interval.contains(testInstant)) {
+              (
+                Some(first.finish_status.getOrElse(first.init_status)),
+                Some(first.finish.getOrElse(first.init))
+              )
+            } else {
+              (
+                Some(second.finish_status.getOrElse(second.init_status)),
+                Some(second.finish.getOrElse(second.init))
+              )
+            }
+        }
 
       TaxiRide(
         taxiRide.ride_id,

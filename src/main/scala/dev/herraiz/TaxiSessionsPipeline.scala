@@ -16,13 +16,16 @@
 
 package dev.herraiz
 
+import io.circe.Error
+import com.spotify.scio._
 import com.spotify.scio.bigquery._
 import com.spotify.scio.pubsub._
-import com.spotify.scio.values.{SCollection, WindowOptions}
-import com.spotify.scio.{Args, ContextAndArgs, ScioContext, streaming}
+import com.spotify.scio.values._
 import dev.herraiz.data.DataTypes._
-import io.circe
-import org.apache.beam.sdk.transforms.windowing.{AfterProcessingTime, AfterWatermark}
+import org.apache.beam.sdk.transforms.windowing.{
+  AfterProcessingTime,
+  AfterWatermark
+}
 import org.joda.time.Duration
 
 object TaxiSessionsPipeline {
@@ -40,53 +43,77 @@ object TaxiSessionsPipeline {
     val accumTable = opts("accum-table")
 
     val messages: SCollection[String] = getMessagesFromPubSub(pubsubTopic)
-    val (rides: SCollection[PointTaxiRide], writableErrors: SCollection[JsonError]) = parseJSONStrings(messages)
+    val (
+      rides: SCollection[PointTaxiRide],
+      writableErrors: SCollection[JsonError]
+    ) = parseJSONStrings(messages)
 
-    rides.saveAsBigQueryTable(Table.Spec(goodTable), WRITE_APPEND, CREATE_IF_NEEDED)
-    writableErrors.saveAsBigQueryTable(Table.Spec(badTable), WRITE_APPEND, CREATE_IF_NEEDED)
+    rides
+      .saveAsTypedBigQueryTable(
+        Table.Spec(goodTable)
+      )
+
+    writableErrors.saveAsTypedBigQueryTable(
+      Table.Spec(badTable)
+    )
 
     // Group by session with a max duration of 5 mins between events
     // Window options
     val wopts: WindowOptions = customWindowOptions
     val groupRides = groupRidesByKey(rides.map(_.toTaxiRide), wopts)
-    groupRides.saveAsBigQueryTable(Table.Spec(accumTable), WRITE_APPEND, CREATE_IF_NEEDED)
+    groupRides.saveAsTypedBigQueryTable(
+      Table.Spec(accumTable)
+    )
 
     sc.run
   }
 
   def customWindowOptions: WindowOptions =
     WindowOptions(
-      trigger = AfterWatermark.pastEndOfWindow()
-        .withEarlyFirings(AfterProcessingTime
-          .pastFirstElementInPane
-          .plusDelayOf(Duration.standardSeconds(EARLY_RESULT)))
-        .withLateFirings(AfterProcessingTime
-          .pastFirstElementInPane()
-          .plusDelayOf(Duration.standardSeconds(LATENESS))),
+      trigger = AfterWatermark
+        .pastEndOfWindow()
+        .withEarlyFirings(
+          AfterProcessingTime.pastFirstElementInPane
+            .plusDelayOf(Duration.standardSeconds(EARLY_RESULT))
+        )
+        .withLateFirings(
+          AfterProcessingTime
+            .pastFirstElementInPane()
+            .plusDelayOf(Duration.standardSeconds(LATENESS))
+        ),
       accumulationMode = streaming.ACCUMULATING_FIRED_PANES,
       allowedLateness = Duration.standardSeconds(LATENESS)
     )
 
-  def getMessagesFromPubSub(pubsubTopic: String)(implicit sc: ScioContext): SCollection[String] = {
-    val pubsubRead: PubsubIO[String] = PubsubIO.string(pubsubTopic, timestampAttribute = "ts")
+  def getMessagesFromPubSub(
+      pubsubTopic: String
+  )(implicit sc: ScioContext): SCollection[String] = {
+    val pubsubRead: PubsubIO[String] =
+      PubsubIO.string(pubsubTopic, timestampAttribute = "ts")
     val pubsubParams: PubsubIO.ReadParam = PubsubIO.ReadParam(PubsubIO.Topic)
 
     /*_*/
     sc.read(pubsubRead)(pubsubParams) /*_*/
   }
 
-  def parseJSONStrings(messages: SCollection[String]):
-  (SCollection[PointTaxiRide], SCollection[JsonError]) = {
-    val jsons: SCollection[Either[circe.Error, PointTaxiRide]] = messages.map { s: String => json2TaxiRide(s) }
+  def parseJSONStrings(
+      messages: SCollection[String]
+  ): (SCollection[PointTaxiRide], SCollection[JsonError]) = {
+    val jsons: SCollection[Either[Error, PointTaxiRide]] = messages.map {
+      s: String => json2TaxiRide(s)
+    }
 
-    val errorsEither :: pointsEither :: Nil = jsons.partition(2, { e =>
-      e match {
-        case Left(_) => 0
-        case Right(_) => 1
+    val errorsEither :: pointsEither :: Nil = jsons.partition(
+      2,
+      { e =>
+        e match {
+          case Left(_)  => 0
+          case Right(_) => 1
+        }
       }
-    })
+    )
 
-    val errors: SCollection[circe.Error] = errorsEither.map(_.left.get)
+    val errors: SCollection[Error] = errorsEither.map(_.left.get)
     val points: SCollection[PointTaxiRide] = pointsEither.map(_.right.get)
 
     val jsonErrors: SCollection[JsonError] = errors.map(circeErrorToCustomError)
@@ -94,13 +121,18 @@ object TaxiSessionsPipeline {
     (points, jsonErrors)
   }
 
-  def groupRidesByKey(rides: SCollection[TaxiRide], wopts: WindowOptions): SCollection[TaxiRide] = {
+  def groupRidesByKey(
+      rides: SCollection[TaxiRide],
+      wopts: WindowOptions
+  ): SCollection[TaxiRide] = {
     val ridesWithKey: SCollection[(String, TaxiRide)] =
       rides.keyBy(_.ride_id)
 
     val afterWindow: SCollection[(String, TaxiRide)] =
-      ridesWithKey.withSessionWindows(Duration.standardSeconds(SESSION_GAP), options = wopts)
-
+      ridesWithKey.withSessionWindows(
+        Duration.standardSeconds(SESSION_GAP),
+        options = wopts
+      )
 
     val agg: SCollection[TaxiRide] = afterWindow.reduceByKey(_ + _).map(_._2)
 
