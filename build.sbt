@@ -31,7 +31,7 @@ lazy val root: Project = project
       "org.apache.beam" % "beam-runners-direct-java" % beamVersion,
       "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion,
       "org.slf4j" % "slf4j-simple" % "1.7.36",
-      "com.google.http-client" % "google-http-client-apache-v2" % "1.38.1"
+      "com.google.http-client" % "google-http-client-apache-v2" % "1.45.3"
     )
   )
   .enablePlugins(JavaAppPackaging)
