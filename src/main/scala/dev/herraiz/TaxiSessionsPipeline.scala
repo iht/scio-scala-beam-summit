@@ -16,12 +16,16 @@
 
 package dev.herraiz
 
+import io.circe.Error
+import com.spotify.scio._
 import com.spotify.scio.bigquery._
-import com.spotify.scio.bigquery.{CREATE_IF_NEEDED, Table, WRITE_TRUNCATE}
-import com.spotify.scio.values.{SCollection, WindowOptions}
-import com.spotify.scio.{Args, ContextAndArgs, ScioContext, streaming}
+import com.spotify.scio.pubsub._
+import com.spotify.scio.values._
 import dev.herraiz.data.DataTypes._
-import org.apache.beam.sdk.transforms.windowing.{AfterProcessingTime, AfterWatermark}
+import org.apache.beam.sdk.transforms.windowing.{
+  AfterProcessingTime,
+  AfterWatermark
+}
 import org.joda.time.Duration
 
 object TaxiSessionsPipeline {
@@ -39,43 +43,64 @@ object TaxiSessionsPipeline {
     val accumTable = opts("accum-table")
 
     val messages: SCollection[String] = getMessagesFromPubSub(pubsubTopic)
-    val (rides, writableErrors) = parseJSONStrings(messages)
+    val (
+      rides: SCollection[PointTaxiRide],
+      writableErrors: SCollection[JsonError]
+    ) = parseJSONStrings(messages)
 
-    rides.saveAsBigQueryTable(Table.Spec(goodTable), WRITE_TRUNCATE, CREATE_IF_NEEDED)
-    writableErrors.saveAsBigQueryTable(Table.Spec(badTable), WRITE_TRUNCATE, CREATE_IF_NEEDED)
+    rides
+      .saveAsTypedBigQueryTable(
+        Table.Spec(goodTable)
+      )
+
+    writableErrors.saveAsTypedBigQueryTable(
+      Table.Spec(badTable)
+    )
 
     // Group by session with a max duration of 5 mins between events
     // Window options
     val wopts: WindowOptions = customWindowOptions
     val groupRides = groupRidesByKey(rides.map(_.toTaxiRide), wopts)
-    groupRides.saveAsBigQueryTable(Table.Spec(accumTable), WRITE_TRUNCATE, CREATE_IF_NEEDED)
+    groupRides.saveAsTypedBigQueryTable(
+      Table.Spec(accumTable)
+    )
 
     sc.run
   }
 
   def customWindowOptions: WindowOptions =
     WindowOptions(
-      trigger = AfterWatermark.pastEndOfWindow()
-        .withEarlyFirings(AfterProcessingTime
-          .pastFirstElementInPane
-          .plusDelayOf(Duration.standardSeconds(EARLY_RESULT)))
-        .withLateFirings(AfterProcessingTime
-          .pastFirstElementInPane()
-          .plusDelayOf(Duration.standardSeconds(LATENESS))),
+      trigger = AfterWatermark
+        .pastEndOfWindow()
+        .withEarlyFirings(
+          AfterProcessingTime.pastFirstElementInPane
+            .plusDelayOf(Duration.standardSeconds(EARLY_RESULT))
+        )
+        .withLateFirings(
+          AfterProcessingTime
+            .pastFirstElementInPane()
+            .plusDelayOf(Duration.standardSeconds(LATENESS))
+        ),
       accumulationMode = streaming.ACCUMULATING_FIRED_PANES,
       allowedLateness = Duration.standardSeconds(LATENESS)
     )
 
-  def getMessagesFromPubSub(pubsubTopic: String)(implicit sc: ScioContext): SCollection[String] = {
+  def getMessagesFromPubSub(
+      pubsubTopic: String
+  )(implicit sc: ScioContext): SCollection[String] = {
     ???
   }
 
-  def parseJSONStrings(messages: SCollection[String]):
-  (SCollection[PointTaxiRide], SCollection[JsonError]) = {
+  def parseJSONStrings(
+      messages: SCollection[String]
+  ): (SCollection[PointTaxiRide], SCollection[JsonError]) = {
     ???
   }
 
-  def groupRidesByKey(rides: SCollection[TaxiRide], wopts: WindowOptions): SCollection[TaxiRide] = {
+  def groupRidesByKey(
+      rides: SCollection[TaxiRide],
+      wopts: WindowOptions
+  ): SCollection[TaxiRide] = {
     ???
   }
 }
