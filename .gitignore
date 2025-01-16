@@ -4,3 +4,9 @@
 target
 .bsp
 .java-version
+.bloop
+.metals
+.vscode
+project/.bloop
+project/metals.sbt
+project/project
