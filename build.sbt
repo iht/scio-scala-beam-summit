@@ -79,7 +79,7 @@ lazy val root: Project = project
       "org.apache.beam" % "beam-runners-direct-java" % beamVersion % Test,
       "com.spotify" %% "scio-test" % scioVersion % Test,
       "org.slf4j" % "slf4j-simple" % slf4jVersion % Test,
-      "com.github.luben" % "zstd-jni" % "1.5.7-1"
+      "com.github.luben" % "zstd-jni" % "1.5.7-6"
     )
   )
 
