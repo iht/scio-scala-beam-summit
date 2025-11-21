@@ -7,7 +7,7 @@ val beamVersion = "2.63.0"
 
 val guavaVersion = "33.4.0-jre"
 val jacksonVersion = "2.20.1"
-val magnolifyVersion = "0.8.0"
+val magnolifyVersion = "0.9.0"
 val nettyVersion = "4.2.7.Final"
 val slf4jVersion = "2.0.17"
 val gcpLibrariesVersion = "26.55.0"
