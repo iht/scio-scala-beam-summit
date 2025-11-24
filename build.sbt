@@ -10,7 +10,7 @@ val jacksonVersion = "2.20.1"
 val magnolifyVersion = "0.9.1"
 val nettyVersion = "4.2.7.Final"
 val slf4jVersion = "2.0.17"
-val gcpLibrariesVersion = "26.55.0"
+val gcpLibrariesVersion = "26.72.0"
 
 lazy val gcpBom = Bom(
   "com.google.cloud" % "libraries-bom" % gcpLibrariesVersion
