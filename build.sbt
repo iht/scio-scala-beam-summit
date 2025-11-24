@@ -5,7 +5,7 @@ import com.here.bom.Bom
 val scioVersion = "0.14.20"
 val beamVersion = "2.69.0"
 
-val guavaVersion = "33.4.0-jre"
+val guavaVersion = "33.5.0-jre"
 val jacksonVersion = "2.20.1"
 val magnolifyVersion = "0.9.1"
 val nettyVersion = "4.2.7.Final"
