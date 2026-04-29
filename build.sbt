@@ -2,7 +2,7 @@ import sbt._
 import Keys._
 import com.here.bom.Bom
 
-val scioVersion = "0.14.20"
+val scioVersion = "0.15.6"
 val beamVersion = "2.69.0"
 
 val guavaVersion = "33.5.0-jre"
