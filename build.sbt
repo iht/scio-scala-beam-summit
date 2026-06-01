@@ -6,7 +6,7 @@ val scioVersion = "0.15.6"
 val beamVersion = "2.73.0"
 
 val guavaVersion = "33.6.0-jre"
-val jacksonVersion = "2.21.3"
+val jacksonVersion = "2.22.0"
 val magnolifyVersion = "0.9.4"
 val nettyVersion = "4.2.14.Final"
 val slf4jVersion = "2.0.18"
