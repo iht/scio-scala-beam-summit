@@ -3,7 +3,7 @@ import Keys._
 import com.here.bom.Bom
 
 val scioVersion = "0.15.6"
-val beamVersion = "2.73.0"
+val beamVersion = "2.74.0"
 
 val guavaVersion = "33.6.0-jre"
 val jacksonVersion = "2.21.3"
@@ -79,7 +79,7 @@ lazy val root: Project = project
       "org.apache.beam" % "beam-runners-direct-java" % beamVersion % Test,
       "com.spotify" %% "scio-test" % scioVersion % Test,
       "org.slf4j" % "slf4j-simple" % slf4jVersion % Test,
-      "com.github.luben" % "zstd-jni" % "1.5.7-9"
+      "com.github.luben" % "zstd-jni" % "1.5.7-10"
     )
   )
 
