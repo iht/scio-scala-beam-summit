@@ -47,13 +47,21 @@ lazy val commonSettings = bomSettings ++ Def.settings(
   scalaVersion := "2.13.18",
   scalacOptions ++= Seq(
     "-release",
-    "11",
+    "17",
     "-deprecation",
     "-feature",
     "-unchecked",
     "-Ymacro-annotations"
   ),
-  javacOptions ++= Seq("--release", "11"),
+  javacOptions ++= Seq("--release", "17"),
+  javaOptions ++= Seq(
+    "--add-opens=java.base/java.lang=ALL-UNNAMED",
+    "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+    "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+    "--add-opens=java.base/java.io=ALL-UNNAMED",
+    "--add-opens=java.base/java.util=ALL-UNNAMED",
+    "--add-opens=java.base/java.nio=ALL-UNNAMED"
+  ),
   // add extra resolved and remove exclude if you need kafka
   // resolvers += "confluent" at "https://packages.confluent.io/maven/",
   excludeDependencies += "org.apache.beam" % "beam-sdks-java-io-kafka",
