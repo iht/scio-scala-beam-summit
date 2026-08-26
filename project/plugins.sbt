@@ -1,3 +1,3 @@
 addDependencyTreePlugin
-addSbtPlugin("com.here.platform" % "sbt-bom" % "1.0.33")
+addSbtPlugin("com.here.platform" % "sbt-bom" % "1.0.34")
 addSbtPlugin("ch.epfl.scala" % "sbt-version-policy" % "3.3.0")
