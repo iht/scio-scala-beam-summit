@@ -9,7 +9,7 @@ val guavaVersion = "33.7.1-jre"
 val jacksonVersion = "2.22.2"
 val magnolifyVersion = "0.9.6"
 val nettyVersion = "4.2.17.Final"
-val slf4jVersion = "2.0.18"
+val slf4jVersion = "2.0.19"
 val gcpLibrariesVersion = "26.87.0"
 
 lazy val gcpBom = Bom(
