@@ -3,7 +3,7 @@ import Keys._
 import com.here.bom.Bom
 
 val scioVersion = "0.15.9"
-val beamVersion = "2.75.0"
+val beamVersion = "2.76.0"
 
 val guavaVersion = "33.7.1-jre"
 val jacksonVersion = "2.22.2"
